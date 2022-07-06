@@ -1,0 +1,324 @@
+'Recarga de tablas para poder reeditar'
+
+DROP TABLE Paciente CASCADE CONSTRAINTS;
+DROP TABLE Vacuna CASCADE CONSTRAINTS;
+DROP TABLE Recomendaciones CASCADE CONSTRAINTS;
+DROP TABLE PersonalVacunacion CASCADE CONSTRAINTS;
+DROP TABLE Equipo CASCADE CONSTRAINTS;
+DROP TABLE Centro CASCADE CONSTRAINTS;
+DROP TABLE HistEquipo CASCADE CONSTRAINTS;
+DROP TABLE Turno CASCADE CONSTRAINTS;
+DROP TABLE PruebasCovid CASCADE CONSTRAINTS;
+DROP TABLE HistMedico CASCADE CONSTRAINTS;
+DROP TABLE Alergia CASCADE CONSTRAINTS;
+DROP TABLE Cita CASCADE CONSTRAINTS;
+DROP TABLE HistRecomendaciones CASCADE CONSTRAINTS;
+
+COMMIT;
+
+'Creacion de las tablas'
+
+CREATE TABLE Paciente(	
+	NSS NUMERIC(15) CONSTRAINTS PK_Paciente PRIMARY KEY,
+	Nombre VARCHAR2(25) CONSTRAINTS nn_NombrePaciente NOT null,
+	Apellido1 VARCHAR2(25) CONSTRAINTS nn_Apellido1Paciente NOT null,
+	Apellido2 VARCHAR2(25),
+	Sexo VARCHAR2(10),
+	FechaNacimiento DATE
+);
+
+CREATE TABLE Vacuna
+(	CodVacuna NUMERIC(15) CONSTRAINTS PK_Vacuna PRIMARY KEY,
+	NombreVacuna VARCHAR2(25) CONSTRAINTS nn_NombreVacuna NOT null,
+	NºDosis NUMERIC(2) CONSTRAINTS nn_NºDosisVacuna NOT null,
+	TiempoEntreDosis NUMERIC(2) CONSTRAINT nn_TiempoDosis NOT null
+);
+
+CREATE TABLE Recomendaciones
+(	CodVacuna NUMERIC(15),
+	CodRecomendacion NUMERIC(15) CONSTRAINT PK_Recomendaciones PRIMARY key,
+	Sexo VARCHAR2(10),
+	MinimoEdad NUMERIC(2),
+	MaximoEdad NUMERIC(2),
+	Estado VARCHAR2(15) CONSTRAINTS nn_EstadoRecomen NOT null,
+	Fuente VARCHAR2(5),
+	CantidadDosis NUMERIC (2) CONSTRAINT nn_CantidadRecomen NOT null,
+	CONSTRAINT fk_Rec FOREIGN KEY (CodVacuna) REFERENCES Vacuna
+);
+
+CREATE TABLE PersonalVacunacion
+(	NP NUMERIC(15) CONSTRAINT PK_PersonalVacunacion PRIMARY KEY,
+	Nombre VARCHAR2(25) CONSTRAINTS nn_NombrePersonal NOT null,
+	Apellido1 VARCHAR2(25) CONSTRAINTS nn_Apellido1Personal NOT null,
+	Apellido2 VARCHAR2(25),
+	Especialidad VARCHAR2(25)
+);
+
+CREATE TABLE Centro
+(	CodCentro NUMERIC(15) CONSTRAINT Centro_PKEY PRIMARY KEY,
+	NombreCentro VARCHAR2(25) CONSTRAINTS nn_NombreCentro NOT null,
+	Direccion VARCHAR2(30),
+	CodPostal NUMERIC(5),
+	Provincia VARCHAR2(25),
+	Ciudad VARCHAR2(25)
+);
+
+CREATE TABLE Equipo
+(	CodEquipo NUMERIC(15) CONSTRAINT PK_Equipo PRIMARY key,
+	CodCentro NUMERIC(15),
+	NombreEquipo VARCHAR2(25) CONSTRAINTS nn_NombreEquipo NOT null,
+	Departamento VARCHAR2(25),
+	CONSTRAINT fk_Equipo FOREIGN KEY (CodCentro) REFERENCES Centro
+);
+
+CREATE TABLE HistEquipo
+(	NP NUMERIC(15),
+	CodEquipo NUMERIC(15),
+	FechaInicio DATE,
+	FechaFin DATE,
+	CONSTRAINT HistEquipo_PKEY PRIMARY KEY (NP, CodEquipo, FechaInicio),
+	CONSTRAINT fk_HistEquipo FOREIGN KEY (NP) REFERENCES PersonalVacunacion,
+	CONSTRAINT fk_HistEquipo1 FOREIGN KEY (CodEquipo) REFERENCES Equipo
+);
+
+CREATE TABLE Turno
+(	CodCentro NUMERIC(15),
+	CodEquipo NUMERIC(15),
+	HoraInicio DATE,
+	HoraFin DATE,
+	Fecha DATE CONSTRAINTS nn_FechaTurno NOT null,
+	CONSTRAINT Turno_PKEY PRIMARY KEY (CodCentro, Fecha),
+	CONSTRAINT fk_Turno FOREIGN KEY (CodCentro) REFERENCES Centro,
+	CONSTRAINT fk_Turno1 FOREIGN KEY (CodEquipo) REFERENCES Equipo
+);
+
+CREATE TABLE PruebasCovid
+(	NSS NUMERIC(15),	
+	FechaPrueba DATE,
+	PruebaRealizada VARCHAR2(20) CONSTRAINTS nn_PruebaCovid NOT null,
+	ResultadoPrueba VARCHAR2(20) CONSTRAINT nn_ResPrueba NOT null,
+	Secuelas VARCHAR2(10),
+	CONSTRAINT PruebasCovid_PKEY PRIMARY KEY (NSS, FechaPrueba),
+	CONSTRAINT fk_PruebasCovid FOREIGN KEY (NSS) REFERENCES Paciente
+);
+
+CREATE TABLE HistMedico
+(	NSS NUMERIC(15),
+	FechaAlta DATE,
+	Nº1ªDosis NUMERIC(2) CONSTRAINTS nn_Nº1ªDosis NOT null,
+	Nº2ªDosis NUMERIC(2) CONSTRAINTS nn_Nº2ªDosis NOT null,
+	TiempoEsperaContagio NUMERIC(2) CONSTRAINTS nn_TiempoEsperaContagio NOT null,
+	CONSTRAINT HistMedico_PKEY PRIMARY KEY (NSS, FechaAlta),
+	CONSTRAINT fk_HistMedico FOREIGN KEY (NSS) REFERENCES Paciente
+);
+
+CREATE TABLE Alergia
+(	NSS NUMERIC(15),
+	CodVacuna NUMERIC(15),
+	FechaDiagnostico DATE,
+	TipoAlergia VARCHAR2(25) CONSTRAINTS nn_TipoAlergia NOT null,
+	CONSTRAINT Alergia_PKEY PRIMARY KEY (NSS, CodVacuna, FechaDiagnostico),
+	CONSTRAINT fk_Alergia FOREIGN KEY (NSS) REFERENCES Paciente,
+	CONSTRAINT fk_Alergia1 FOREIGN KEY (CodVacuna) REFERENCES Vacuna
+);
+
+CREATE TABLE Cita
+(	NSS NUMERIC(15),	
+	CodVacuna NUMERIC(15),
+	Fecha DATE,
+	Hora DATE,
+	Acudio VARCHAR2(10),
+	FechaNotificacion DATE,
+	NP NUMERIC(15),
+	CodCentro NUMERIC(15),
+	CONSTRAINT Cita_PKEY PRIMARY KEY (NSS, CodVacuna, Fecha),
+	CONSTRAINT fk_Cita FOREIGN KEY (NSS) REFERENCES Paciente,
+	CONSTRAINT fk_Cita1 FOREIGN KEY (CodVacuna) REFERENCES Vacuna,
+	CONSTRAINT fk_Cita2 FOREIGN KEY (NP) REFERENCES PersonalVacunacion,
+	CONSTRAINT fk_Cita3 FOREIGN KEY (CodCentro) REFERENCES Centro
+);
+
+CREATE TABLE HistRecomendaciones
+(	CodRecomendacion NUMERIC(15),	
+	RecPasada VARCHAR2(50),
+	NuevaRec VARCHAR2(50),
+	FechaEmision DATE CONSTRAINTS nn_FechaEmision NOT null,
+	Fuente VARCHAR2(5),
+	CONSTRAINT HistRecomendaciones_PKEY PRIMARY KEY (CodRecomendacion, RecPasada),
+	CONSTRAINT fk_HistRec FOREIGN KEY (CodRecomendacion) REFERENCES Recomendaciones
+);
+
+COMMIT;
+
+'Insertar datos en tablas'
+
+'Insertar pacientes - NSS, NOMBRE, APELLIDO1, APELLIDO2, SEXO, FECHANACIMIENTO'
+
+INSERT INTO Paciente VALUES (11234567, 'Lucas', 'Campos', 'Camiña', 'Masculino', to_date('08/05/1999', 'DD/MM/YYYY'));
+INSERT INTO Paciente VALUES (89012345, 'Isabel', 'Fernandez', 'Martinez', 'Femenino', to_date('01/12/1996', 'DD/MM/YYYY'));
+INSERT INTO Paciente VALUES (67890123, 'Enrique', 'Pazos', 'Curras', 'Masculino', to_date('29/01/1989', 'DD/MM/YYYY'));
+INSERT INTO Paciente VALUES (45678901, 'Axiel', 'Piñeiro', 'Pousada', 'Masculino', to_date('09/03/2013', 'DD/MM/YYYY'));
+INSERT INTO Paciente VALUES (23456789, 'Melanie', 'Menduiña', 'Guerra', 'Femenino', to_date('18/09/1999', 'DD/MM/YYYY'));
+
+'Insertar Vacuna - CODVACUNA, NOMBREVACUNA, NºDOSIS, TIEMPODOSIS'
+
+INSERT INTO Vacuna VALUES (13579, 'Pfizer', 1, 21);
+INSERT INTO Vacuna VALUES (24680, 'Moderna', 1, 28);
+INSERT INTO Vacuna VALUES (14703, 'Janssen', 1, 0);
+INSERT INTO Vacuna VALUES (13570, 'Pfizer', 2, 0);
+INSERT INTO Vacuna VALUES (24600, 'Moderna', 2, 0);
+
+'Insertar Recomendaciones - CODVACUNA, CODRECOMENDACIONES, SEXO, MINEDAD, MAXEDAD, ESTADO, FUENTE, CANTIDADDOSIS'
+
+INSERT INTO Recomendaciones VALUES (13579, 0001, 'Ambos', 5, 95, 'Disponible', 'OMS', 2);
+INSERT INTO Recomendaciones VALUES (24680, 0002, 'Ambos', 5, 75, 'Disponible', 'OMS', 2);
+INSERT INTO Recomendaciones VALUES (14703, 0003, 'Ambos', 5, 85, 'Disponible', 'EMA', 1);
+INSERT INTO Recomendaciones VALUES (13570, 0004, 'Ambos', 5, 95, 'Disponible', 'OMS', 2);
+INSERT INTO Recomendaciones VALUES (24600, 0005, 'Ambos', 5, 75, 'Disponible', 'OMS', 2);
+
+'Insertar PersonalVacunacion - NP, NOMBRE, APELLIDO1, APELLIDO2, ESPECIALIDAD'
+
+INSERT INTO PersonalVacunacion VALUES (54367, 'Xan', 'Enriquez', 'López', 'Vacunacion');
+INSERT INTO PersonalVacunacion VALUES (56743, 'Kevin', 'Fernandez', 'Pascual', 'Administracion');
+INSERT INTO PersonalVacunacion VALUES (52189, 'Pablo', 'Caballero', 'Muñoz', 'Administracion');
+INSERT INTO PersonalVacunacion VALUES (58921, 'Abel', 'Rodriguez', 'Barrios', 'Vacunacion');
+INSERT INTO PersonalVacunacion VALUES (50192, 'Estefania', 'Mendez', 'Iglesias', 'Vacunacion');
+
+'Insertar Centro - CODCENTRO, NOMBRECENTRO, DIRECCION, CP, PROVINCIA, CIUDAD'
+
+INSERT INTO Centro VALUES (01, 'ExpoCoruña', 'Rúa Juana Capdevielle, 2', 15008, 'A Coruña', 'A Coruña');
+INSERT INTO Centro VALUES (02, 'Ifevi', 'Av. do Aeroporto, 772', 36318, 'Pontevedra', 'Vigo');
+
+'Insertar Equipo - CODEQUIPO, CODCENTRO, NOMBREEQUIPO, DEPARTAMENTO, NP'
+
+INSERT INTO Equipo VALUES (601, 01, 'Vacunacion 01', 'VAC01');
+INSERT INTO Equipo VALUES (602, 02, 'Vacunacion 02', 'VAC02');
+
+'Insertar Historial de equipo - NP, CODEQUIPO, FECHAINICIO, FECHAFIN'
+
+INSERT INTO HistEquipo VALUES (54367, 601, to_date('01/03/2021', 'DD/MM/YYYY'), to_date('01/04/2021', 'DD/MM/YYYY'));
+INSERT INTO HistEquipo VALUES (54367, 602, to_date('01/04/2021', 'DD/MM/YYYY'), to_date('01/05/2021', 'DD/MM/YYYY'));
+INSERT INTO HistEquipo VALUES (54367, 601, to_date('01/05/2021', 'DD/MM/YYYY'), null);
+INSERT INTO HistEquipo VALUES (58921, 601, to_date('01/03/2021', 'DD/MM/YYYY'), to_date('01/05/2021', 'DD/MM/YYYY'));
+INSERT INTO HistEquipo VALUES (58921, 602, to_date('01/05/2021', 'DD/MM/YYYY'), null);
+INSERT INTO HistEquipo VALUES (56743, 601, to_date('01/03/2021', 'DD/MM/YYYY'), null);
+INSERT INTO HistEquipo VALUES (50192, 602, to_date('01/03/2021', 'DD/MM/YYYY'), null);
+INSERT INTO HistEquipo VALUES (52189, 602, to_date('01/03/2021', 'DD/MM/YYYY'), null);
+
+'Insertar Turno - CODCENTRO, CODEQUIPO, HORAINICIO, HORAFIN, FECHA'
+
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('30/03/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('31/03/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('01/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('02/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('03/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('04/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('05/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('06/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('07/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('08/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('09/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('10/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('11/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('12/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('13/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('14/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('15/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('16/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('17/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('18/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('19/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('20/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('21/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('22/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('23/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('24/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('25/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('26/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('27/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('28/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('29/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (01, 601, to_date('00:00', 'HH24:MI'), to_date('23:59', 'HH24:MI'), to_date('30/04/2021','DD/MM/YYYY'));
+
+INSERT INTO Turno VALUES (02, 602, to_date('05:00', 'HH24:MI'), to_date('13:00', 'HH24:MI'), to_date('01/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('13:00', 'HH24:MI'), to_date('21:00', 'HH24:MI'), to_date('02/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('01:00', 'HH24:MI'), to_date('09:00', 'HH24:MI'), to_date('03/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('09:00', 'HH24:MI'), to_date('17:00', 'HH24:MI'), to_date('04/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('05:00', 'HH24:MI'), to_date('13:00', 'HH24:MI'), to_date('05/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('13:00', 'HH24:MI'), to_date('21:00', 'HH24:MI'), to_date('06/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('01:00', 'HH24:MI'), to_date('09:00', 'HH24:MI'), to_date('07/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('09:00', 'HH24:MI'), to_date('17:00', 'HH24:MI'), to_date('08/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('05:00', 'HH24:MI'), to_date('13:00', 'HH24:MI'), to_date('09/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('13:00', 'HH24:MI'), to_date('21:00', 'HH24:MI'), to_date('10/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('01:00', 'HH24:MI'), to_date('09:00', 'HH24:MI'), to_date('11/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('09:00', 'HH24:MI'), to_date('17:00', 'HH24:MI'), to_date('12/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('05:00', 'HH24:MI'), to_date('13:00', 'HH24:MI'), to_date('13/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('13:00', 'HH24:MI'), to_date('21:00', 'HH24:MI'), to_date('14/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('01:00', 'HH24:MI'), to_date('09:00', 'HH24:MI'), to_date('15/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('09:00', 'HH24:MI'), to_date('17:00', 'HH24:MI'), to_date('16/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('05:00', 'HH24:MI'), to_date('13:00', 'HH24:MI'), to_date('17/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('13:00', 'HH24:MI'), to_date('21:00', 'HH24:MI'), to_date('18/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('01:00', 'HH24:MI'), to_date('09:00', 'HH24:MI'), to_date('19/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('09:00', 'HH24:MI'), to_date('17:00', 'HH24:MI'), to_date('20/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('05:00', 'HH24:MI'), to_date('13:00', 'HH24:MI'), to_date('21/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('13:00', 'HH24:MI'), to_date('21:00', 'HH24:MI'), to_date('22/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('01:00', 'HH24:MI'), to_date('09:00', 'HH24:MI'), to_date('23/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('09:00', 'HH24:MI'), to_date('17:00', 'HH24:MI'), to_date('24/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('05:00', 'HH24:MI'), to_date('13:00', 'HH24:MI'), to_date('25/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('13:00', 'HH24:MI'), to_date('21:00', 'HH24:MI'), to_date('26/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('01:00', 'HH24:MI'), to_date('09:00', 'HH24:MI'), to_date('27/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('09:00', 'HH24:MI'), to_date('17:00', 'HH24:MI'), to_date('28/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('01:00', 'HH24:MI'), to_date('09:00', 'HH24:MI'), to_date('29/04/2021','DD/MM/YYYY'));
+INSERT INTO Turno VALUES (02, 602, to_date('09:00', 'HH24:MI'), to_date('17:00', 'HH24:MI'), to_date('30/04/2021','DD/MM/YYYY'));
+
+'Insertar PruebasCovid - NSS, FECHAPRUEBA, PRUEBAREALIZADA, RESULTADO, SECUELAS'
+
+INSERT INTO PruebasCovid VALUES (89012345, to_date('02/04/2021','DD/MM/YYYY'), 'PCR', 'Negativo', 'No');
+INSERT INTO PruebasCovid VALUES (89012345, to_date('16/04/2021','DD/MM/YYYY'), 'Antigenos', 'Positivo', 'No');
+INSERT INTO PruebasCovid VALUES (89012345, to_date('30/04/2021','DD/MM/YYYY'), 'PCR', 'Negativo', 'No');
+INSERT INTO PruebasCovid VALUES (23456789, to_date('08/04/2021','DD/MM/YYYY'), 'PCR', 'Positivo', 'Si');
+INSERT INTO PruebasCovid VALUES (23456789, to_date('22/04/2021','DD/MM/YYYY'), 'PCR', 'Negativo', 'Si');
+INSERT INTO PruebasCovid VALUES (11234567, to_date('01/04/2021','DD/MM/YYYY'), 'Antigenos', 'Negativo', 'No');
+INSERT INTO PruebasCovid VALUES (11234567, to_date('23/04/2021','DD/MM/YYYY'), 'PCR', 'Negativo', 'No');
+INSERT INTO PruebasCovid VALUES (67890123, to_date('29/03/2021','DD/MM/YYYY'), 'Antigenos', 'Positivo', 'No');
+INSERT INTO PruebasCovid VALUES (67890123, to_date('12/04/2021','DD/MM/YYYY'), 'PCR', 'Negativo', 'No');
+INSERT INTO PruebasCovid VALUES (45678901, to_date('15/04/2021','DD/MM/YYYY'), 'PCR', 'Positivo', 'Si');
+INSERT INTO PruebasCovid VALUES (45678901, to_date('29/04/2021','DD/MM/YYYY'), 'PCR', 'Positivo', 'Si');
+INSERT INTO PruebasCovid VALUES (45678901, to_date('13/05/2021','DD/MM/YYYY'), 'Antigenos', 'Negativo', 'Si');
+
+'Insertar HistMedico - NSS, FECHAALTA, Nº1ªDOSIS, Nº2ªDOSIS, TIEMPOESPERA'
+
+INSERT INTO HistMedico VALUES (89012345, to_date('16/04/2021','DD/MM/YYYY'), 1, 0, 6);
+INSERT INTO HistMedico VALUES (23456789, to_date('08/04/2021','DD/MM/YYYY'), 1, 0, 6);
+INSERT INTO HistMedico VALUES (67890123, to_date('29/03/2021','DD/MM/YYYY'), 0, 0, 6);
+INSERT INTO HistMedico VALUES (45678901, to_date('15/04/2021','DD/MM/YYYY'), 0, 0, 6);
+
+'Insertar Alergia - NSS, CODVACUNA, FECHADIAGNOSTICO, TIPO'
+
+INSERT INTO Alergia VALUES (11234567, 24680, to_date('14/04/2021','DD/MM/YYYY'), 'Polen');
+INSERT INTO Alergia VALUES (11234567, 24600, to_date('14/04/2021','DD/MM/YYYY'), 'Polen');
+INSERT INTO Alergia VALUES (45678901, 13579, to_date('15/04/2021','DD/MM/YYYY'), 'Polvo');
+INSERT INTO Alergia VALUES (45678901, 13570, to_date('15/04/2021','DD/MM/YYYY'), 'Polvo');
+
+'Insertar Cita - NSS, CODVACUNA, FECHA, HORA, ¿ACUDIO?, FECHANOTIFICACION, NP, CODCENTRO'
+
+INSERT INTO Cita VALUES (11234567, 13579, to_date('03/04/2021','DD/MM/YYYY'), to_date('11:13', 'HH24:MI'), 'Si', to_date('01/04/2021','DD/MM/YYYY'), 50192, 02);
+INSERT INTO Cita VALUES (11234567, 13570, to_date('25/04/2021','DD/MM/YYYY'), to_date('18:49', 'HH24:MI'), 'Si', to_date('21/04/2021','DD/MM/YYYY'), 50192, 02);
+INSERT INTO Cita VALUES (89012345, 13579, to_date('01/04/2021','DD/MM/YYYY'), to_date('08:59', 'HH24:MI'), 'Si', to_date('28/03/2021','DD/MM/YYYY'), 54367, 02);
+INSERT INTO Cita VALUES (89012345, 13570, to_date('21/04/2021','DD/MM/YYYY'), to_date('14:14', 'HH24:MI'), 'No', to_date('17/04/2021','DD/MM/YYYY'), 54367, 02);
+INSERT INTO Cita VALUES (89012345, 13579, to_date('01/10/2021','DD/MM/YYYY'), to_date('11:34', 'HH24:MI'), NULL, NULL, NULL, NULL);
+INSERT INTO Cita VALUES (67890123, 24680, to_date('30/03/2021','DD/MM/YYYY'), to_date('12:20', 'HH24:MI'), 'No', to_date('27/03/2021','DD/MM/YYYY'), 54367, 01);
+INSERT INTO Cita VALUES (67890123, 24680, to_date('30/09/2021','DD/MM/YYYY'), to_date('09:20', 'HH24:MI'), NULL, NULL, NULL, NULL);
+INSERT INTO Cita VALUES (45678901, 14703, to_date('15/05/2021','DD/MM/YYYY'), to_date('21:03', 'HH24:MI'), NULL, NULL, NULL, NULL);
+INSERT INTO Cita VALUES (23456789, 13579, to_date('05/04/2021','DD/MM/YYYY'), to_date('19:03', 'HH24:MI'), 'Si', to_date('01/04/2021','DD/MM/YYYY'), 58921, 01);
+INSERT INTO Cita VALUES (23456789, 13570, to_date('26/04/2021','DD/MM/YYYY'), to_date('18:09', 'HH24:MI'), 'No', to_date('23/04/2021','DD/MM/YYYY'), 58921, 01);
+INSERT INTO Cita VALUES (23456789, 13579, to_date('26/10/2021','DD/MM/YYYY'), to_date('12:11', 'HH24:MI'), NULL, NULL, NULL, NULL);
+
+'Insertar HistRecomendaciones - CODRECOMENDACION, RECPASADA, NUEVAREC, FECHAEMISION, FUENTE'
+
+INSERT INTO HistRecomendaciones VALUES (0001, 'Ambos sexos', 'Solo hombres', to_date('24/04/2021', 'DD/MM/YYYY'), 'EMA');
+INSERT INTO HistRecomendaciones VALUES (0004, 'Ambos sexos', 'Solo hombres', to_date('24/04/2021', 'DD/MM/YYYY'), 'EMA');
+INSERT INTO HistRecomendaciones VALUES (0002, 'Maximo edad 75', 'Maximo edad 69', to_date('30/04/2021', 'DD/MM/YYYY'), 'EMA');
+INSERT INTO HistRecomendaciones VALUES (0005, 'Maximo edad 75', 'Maximo edad 69', to_date('30/04/2021', 'DD/MM/YYYY'), 'EMA');
+
+COMMIT;
